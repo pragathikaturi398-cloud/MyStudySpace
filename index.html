@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 My Aesthetic Study Space</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        /* Custom scrollbar to match the pink theme */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #fff5f5; }
+        ::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #f472b6; }
+    </style>
+</head>
+<body class="bg-[#fff5f6] text-rose-900 min-h-screen selection:bg-pink-200">
+
+    <div id="app" class="max-w-7xl mx-auto p-4 md:p-8">
+        
+        <header class="mb-8 bg-white/70 backdrop-blur-md p-6 rounded-3xl border border-pink-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-rose-800 tracking-tight flex items-center gap-2">
+                    <span>🌸</span> My Study Space
+                </h1>
+                <p class="text-rose-400 text-sm mt-1">Glow up your routine, track your syllabus, and build daily discipline.</p>
+            </div>
+            <div class="bg-gradient-to-r from-pink-400 to-rose-400 text-white px-5 py-3 rounded-2xl shadow-sm text-sm font-semibold flex items-center gap-3">
+                ✨ Academic Progress: <span class="text-base font-bold">{{ overallProgress }}%</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <div class="lg:col-span-4 space-y-8">
+                
+                <section class="bg-white p-6 rounded-3xl border border-pink-100 shadow-xs">
+                    <h2 class="text-lg font-bold text-rose-800 mb-4 flex items-center gap-2">
+                        🌟 Habit Tracker
+                    </h2>
+                    
+                    <form @submit.prevent="addHabit" class="flex gap-2 mb-4">
+                        <input 
+                            v-model="newHabitName" 
+                            type="text" 
+                            placeholder="e.g., Hydrate, Read 10 pages..." 
+                            class="flex-1 px-4 py-2 rounded-xl border border-pink-100 focus:outline-hidden focus:ring-2 focus:ring-pink-300 text-sm bg-pink-50/30"
+                            required
+                        >
+                        <button type="submit" class="bg-pink-400 hover:bg-pink-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition">
+                            +
+                        </button>
+                    </form>
+
+                    <div class="space-y-3">
+                        <div v-if="habits.length === 0" class="text-center py-4 text-xs text-rose-300 italic">
+                            No habits tracked yet. Start small!
+                        </div>
+                        
+                        <div v-for="(habit, index) in habits" :key="habit.id" class="p-3 bg-pink-50/40 rounded-2xl border border-pink-100/50 flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-rose-800">{{ habit.name }}</span>
+                                <button @click="deleteHabit(index)" class="text-rose-300 hover:text-rose-500 text-xs">✕</button>
+                            </div>
+                            
+                            <div class="flex justify-between items-center pt-1 border-t border-pink-100/30">
+                                <span class="text-[10px] text-rose-400 font-medium">Last 5 days:</span>
+                                <div class="flex gap-1.5">
+                                    <button 
+                                        v-for="(day, dIndex) in habit.history" 
+                                        :key="dIndex"
+                                        @click="toggleHabitDay(index, dIndex)"
+                                        class="w-6 h-6 rounded-lg text-[9px] font-bold transition flex items-center justify-center"
+                                        :class="day.done ? 'bg-pink-400 text-white' : 'bg-white border border-pink-200 text-rose-300 hover:bg-pink-50'"
+                                        :title="day.date"
+                                    >
+                                        ✓
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-white p-6 rounded-3xl border border-pink-100 shadow-xs">
+                    <h2 class="text-lg font-bold text-rose-800 mb-2 flex items-center gap-2">
+                        💭 Mental Sandbox / Notes
+                    </h2>
+                    <p class="text-xs text-rose-400 mb-3">Jot down motivational quotes, reminders, or general thoughts.</p>
+                    <textarea 
+                        v-model="stickyNotes" 
+                        @input="saveData"
+                        placeholder="Type reminders or affirmations here... your data is auto-saved!" 
+                        class="w-full h-40 p-4 rounded-2xl border border-pink-100 focus:outline-hidden focus:ring-2 focus:ring-pink-300 text-sm bg-[#fffafb] resize-none leading-relaxed text-rose-700"
+                    ></textarea>
+                </section>
+            </div>
+
+            <div class="lg:col-span-5 space-y-8">
+                
+                <section class="bg-white p-6 rounded-3xl border border-pink-100 shadow-xs">
+                    <h2 class="text-lg font-bold text-rose-800 mb-4 flex items-center gap-2">
+                        📖 Add Academic Course
+                    </h2>
+                    <form @submit.prevent="addSubject" class="flex flex-col sm:flex-row gap-2">
+                        <input 
+                            v-model="newSubjectName" 
+                            type="text" 
+                            placeholder="Course name (e.g., Chemistry, Literature)" 
+                            class="flex-1 px-4 py-2.5 rounded-xl border border-pink-100 focus:outline-hidden focus:ring-2 focus:ring-pink-300 text-sm bg-pink-50/30"
+                            required
+                        >
+                        <button type="submit" class="bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap">
+                            Add Course
+                        </button>
+                    </form>
+                </section>
+
+                <section class="space-y-4">
+                    <h2 class="text-lg font-bold text-rose-800 flex items-center gap-2">
+                        📚 Curriculum Tracking
+                    </h2>
+                    
+                    <div v-if="subjects.length === 0" class="text-center py-12 bg-white rounded-3xl border border-dashed border-pink-200 text-rose-300 text-sm">
+                        Your study roadmap is blank. Add a course to start tracking.
+                    </div>
+
+                    <div v-for="(subject, sIndex) in subjects" :key="subject.id" class="bg-white rounded-3xl shadow-xs border border-pink-100 overflow-hidden transition hover:shadow-sm">
+                        <div class="p-4 bg-gradient-to-r from-pink-50 to-white border-b border-pink-100 flex justify-between items-center flex-wrap gap-2">
+                            <div class="flex-1 min-w-[150px]">
+                                <h3 class="text-base font-bold text-rose-800">{{ subject.name }}</h3>
+                                <div class="w-full max-w-xs bg-pink-100 h-2 rounded-full mt-1.5 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-pink-400 to-rose-400 h-full transition-all duration-300" :style="{ width: getSubjectProgress(subject) + '%' }"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-pink-100 text-pink-700">
+                                    {{ getSubjectProgress(subject) }}%
+                                </span>
+                                <button @click="deleteSubject(sIndex)" class="text-rose-300 hover:text-rose-500 text-xs px-1">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="p-4 space-y-2 bg-white">
+                            <div v-for="(module, mIndex) in subject.modules" :key="module.id" class="flex justify-between items-center text-sm p-1.5 hover:bg-pink-50/30 rounded-xl transition">
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        v-model="module.completed" 
+                                        @change="saveData"
+                                        class="w-4 h-4 text-pink-500 accent-pink-400 border-pink-200 rounded-sm focus:ring-pink-300"
+                                    >
+                                    <span :class="{'line-through text-rose-300': module.completed, 'text-rose-700': !module.completed}" class="text-xs">
+                                        {{ module.name }}
+                                    </span>
+                                </label>
+                                <button @click="deleteModule(sIndex, mIndex)" class="text-rose-200 hover:text-rose-500 text-xs">
+                                    &times;
+                                </button>
+                            </div>
+
+                            <form @submit.prevent="addModule(sIndex)" class="flex gap-2 mt-3 pt-2 border-t border-pink-50">
+                                <input 
+                                    v-model="subject.newModuleName" 
+                                    type="text" 
+                                    placeholder="Add lesson, unit, or project..." 
+                                    class="flex-1 px-3 py-1.5 rounded-lg border border-pink-100 focus:outline-hidden focus:ring-1 focus:ring-pink-300 text-xs bg-pink-50/20"
+                                    required
+                                >
+                                <button type="submit" class="bg-rose-800 hover:bg-rose-900 text-white px-3 py-1.5 rounded-lg text-[11px] font-medium transition">
+                                    + Add
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="lg:col-span-3 space-y-8">
+                
+                <section class="bg-white p-6 rounded-3xl border border-pink-100 shadow-xs">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-rose-800 flex items-center gap-2">
+                            🗓️ Daily Agenda
+                        </h2>
+                        <span class="text-[11px] bg-rose-50 text-rose-500 font-bold px-2 py-0.5 rounded-full">
+                            {{ activeTasksCount }} left
+                        </span>
+                    </div>
+
+                    <form @submit.prevent="addTask" class="space-y-2 mb-4">
+                        <input 
+                            v-model="newTaskText" 
+                            type="text" 
+                            placeholder="What must be done today?" 
+                            class="w-full px-4 py-2 rounded-xl border border-pink-100 focus:outline-hidden focus:ring-2 focus:ring-pink-300 text-sm bg-pink-50/30"
+                            required
+                        >
+                        <div class="flex gap-2">
+                            <select v-model="newTaskPriority" class="flex-1 px-2 py-1.5 rounded-xl border border-pink-100 text-xs bg-white text-rose-700">
+                                <option value="Low">Low Priority</option>
+                                <option value="Medium">Medium Priority</option>
+                                <option value="High">High Priority</option>
+                            </select>
+                            <button type="submit" class="bg-rose-800 hover:bg-rose-900 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition">
+                                Add
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                        <div v-if="tasks.length === 0" class="text-center py-6 text-xs text-rose-300 italic">
+                            No immediate tasks left. Great job!
+                        </div>
+
+                        <div 
+                            v-for="(task, index) in sortedTasks" 
+                            :key="task.id" 
+                            class="flex items-start justify-between p-3 rounded-xl border transition-all"
+                            :class="task.completed ? 'bg-pink-50/30 border-pink-50' : 'bg-white border-pink-100'"
+                        >
+                            <label class="flex items-start gap-2.5 cursor-pointer flex-1">
+                                <input 
+                                    type="checkbox" 
+                                    v-model="task.completed" 
+                                    @change="saveData"
+                                    class="mt-0.5 w-4 h-4 text-pink-500 accent-pink-400 border-pink-200 rounded-sm focus:ring-pink-300"
+                                >
+                                <div class="space-y-0.5">
+                                    <p :class="{'line-through text-rose-300': task.completed, 'text-rose-800 font-medium': !task.completed}" class="text-xs leading-tight">
+                                        {{ task.text }}
+                                    </p>
+                                    <span 
+                                        class="inline-block text-[9px] px-1.5 py-0.2 rounded-md font-bold uppercase tracking-wider"
+                                        :class="{
+                                            'bg-rose-100 text-rose-600': task.priority === 'High' && !task.completed,
+                                            'bg-amber-100 text-amber-600': task.priority === 'Medium' && !task.completed,
+                                            'bg-pink-50 text-pink-400': task.priority === 'Low' || task.completed,
+                                        }"
+                                    >
+                                        {{ task.priority }}
+                                    </span>
+                                </div>
+                            </label>
+                            <button @click="deleteTask(task.id)" class="text-rose-200 hover:text-rose-500 px-1 text-sm">
+                                &times;
+                            </button>
+                        </div>
+                    </div>
+
+                    <button 
+                        v-if="hasCompletedTasks" 
+                        @click="clearCompletedTasks" 
+                        class="w-full mt-4 text-center text-xs text-rose-400 hover:text-rose-600 transition underline decoration-dotted"
+                    >
+                        Clear Completed Items
+                    </button>
+                </section>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                // Persistent Reactive States
+                const subjects = ref([]);
+                const tasks = ref([]);
+                const habits = ref([]);
+                const stickyNotes = ref('');
+                
+                // Form Fields
+                const newSubjectName = ref('');
+                const newTaskText = ref('');
+                const newTaskPriority = ref('Medium');
+                const newHabitName = ref('');
+
+                // Bootstrapping Strategy: Extract Local Database safely
+                onMounted(() => {
+                    if (localStorage.getItem('aesthetic_subjs')) subjects.value = JSON.parse(localStorage.getItem('aesthetic_subjs'));
+                    if (localStorage.getItem('aesthetic_tasks')) tasks.value = JSON.parse(localStorage.getItem('aesthetic_tasks'));
+                    if (localStorage.getItem('aesthetic_habits')) habits.value = JSON.parse(localStorage.getItem('aesthetic_habits'));
+                    if (localStorage.getItem('aesthetic_notes')) stickyNotes.value = localStorage.getItem('aesthetic_notes');
+                });
+
+                // Write/Sync changes to browser localStorage
+                const saveData = () => {
+                    localStorage.setItem('aesthetic_subjs', JSON.stringify(subjects.value));
+                    localStorage.setItem('aesthetic_tasks', JSON.stringify(tasks.value));
+                    localStorage.setItem('aesthetic_habits', JSON.stringify(habits.value));
+                    localStorage.setItem('aesthetic_notes', stickyNotes.value);
+                };
+
+                // Habit Loop Management
+                const addHabit = () => {
+                    if (!newHabitName.value.trim()) return;
+                    
+                    // Create mock labels for the past 5 tracking intervals
+                    const history = [];
+                    for(let i = 4; i >= 0; i--) {
+                        const d = new Date();
+                        d.setDate(d.getDate() - i);
+                        history.push({
+                            date: d.toLocaleDateString(undefined, {month: 'short', day: 'numeric'}),
+                            done: false
+                        });
+                    }
+
+                    habits.value.push({
+                        id: Date.now(),
+                        name: newHabitName.value.trim(),
+                        history: history
+                    });
+                    newHabitName.value = '';
+                    saveData();
+                };
+
+                const toggleHabitDay = (hIndex, dIndex) => {
+                    habits.value[hIndex].history[dIndex].done = !habits.value[hIndex].history[dIndex].done;
+                    saveData();
+                };
+
+                const deleteHabit = (index) => {
+                    habits.value.splice(index, 1);
+                    saveData();
+                };
+
+                // Curriculum Tracker Actions
+                const addSubject = () => {
+                    if (!newSubjectName.value.trim()) return;
+                    subjects.value.push({
+                        id: Date.now(),
+                        name: newSubjectName.value.trim(),
+                        modules: [],
+                        newModuleName: ''
+                    });
+                    newSubjectName.value = '';
+                    saveData();
+                };
+
+                const deleteSubject = (index) => {
+    if(confirm("Delete this entire syllabus track?")) {
+        subjects.value.splice(index, 1);
+        saveData();
+    }
+};
+
+                const addModule = (subjectIndex) => {
+                    const subj = subjects.value[subjectIndex];
+                    if (!subj.newModuleName.trim()) return;
+                    subj.modules.push({
+                        id: Date.now(),
+                        name: subj.newModuleName.trim(),
+                        completed: false
+                    });
+                    subj.newModuleName = '';
+                    saveData();
+                };
+
+                const deleteModule = (sIndex, mIndex) => {
+                    subjects.value[sIndex].modules.splice(mIndex, 1);
+                    saveData();
+                };
+
+                const getSubjectProgress = (subject) => {
+                    if (!subject.modules || subject.modules.length === 0) return 0;
+                    const items = subject.modules.filter(m => m.completed).length;
+                    return Math.round((items / subject.modules.length) * 100);
+                };
+
+                // Task Core Functions
+                const addTask = () => {
+                    if (!newTaskText.value.trim()) return;
+                    tasks.value.push({
+                        id: Date.now(),
+                        text: newTaskText.value.trim(),
+                        priority: newTaskPriority.value,
+                        completed: false
+                    });
+                    newTaskText.value = '';
+                    saveData();
+                };
+
+                const deleteTask = (id) => {
+                    tasks.value = tasks.value.filter(t => t.id !== id);
+                    saveData();
+                };
+
+                const clearCompletedTasks = () => {
+                    tasks.value = tasks.value.filter(t => !t.completed);
+                    saveData();
+                };
+
+                // Analytics & Matrix Sort
+                const sortedTasks = computed(() => {
+                    return [...tasks.value].sort((a, b) => {
+                        if (a.completed !== b.completed) return a.completed - b.completed;
+                        const weights = { 'High': 3, 'Medium': 2, 'Low': 1 };
+                        return weights[b.priority] - weights[a.priority];
+                    });
+                });
+
+                const overallProgress = computed(() => {
+                    let total = 0, done = 0;
+                    subjects.value.forEach(s => {
+                        total += s.modules.length;
+                        done += s.modules.filter(m => m.completed).length;
+                    });
+                    return total === 0 ? 0 : Math.round((done / total) * 100);
+                });
+
+                const activeTasksCount = computed(() => tasks.value.filter(t => !t.completed).length);
+                const hasCompletedTasks = computed(() => tasks.value.some(t => t.completed));
+
+                return {
+                    subjects, tasks, habits, stickyNotes,
+                    newSubjectName, newTaskText, newTaskPriority, newHabitName,
+                    addHabit, toggleHabitDay, deleteHabit,
+                    addSubject, deleteSubject, addModule, deleteModule, getSubjectProgress,
+                    addTask, deleteTask, clearCompletedTasks,
+                    sortedTasks, overallProgress, activeTasksCount, hasCompletedTasks, saveData
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
